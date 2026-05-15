@@ -1,0 +1,38 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: rideshare-postgres
+    environment:
+      POSTGRES_DB: rideshare
+      POSTGRES_USER: rideshare_user
+      POSTGRES_PASSWORD: rideshare_pass
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: rideshare-redis
+    ports:
+      - '6379:6379'
+    restart: unless-stopped
+
+  api:
+    build: .
+    container_name: rideshare-api-app
+    ports:
+      - '3000:3000'
+    environment:
+      - DATABASE_URL=postgresql://rideshare_user:rideshare_pass@postgres:5432/rideshare?schema=public
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
