@@ -34,7 +34,10 @@ export function findUserByReferralCode(referralCode) {
   return prisma.user.findUnique({ where: { referralCode } });
 }
 
-export async function createUser({ phone, firstName, lastName, registeredApp, referredBy = null }) {
+export async function createUser({ phone, firstName, lastName, registeredApp, referredBy = null, avatarUrl = null }) {
+  const referralCode = await uniqueReferralCode();
+  const isDriver = registeredApp === "DRIVER";
+
   return prisma.user.create({
     data: {
       phone,
@@ -42,7 +45,25 @@ export async function createUser({ phone, firstName, lastName, registeredApp, re
       lastName,
       registeredApp,
       referredBy,
-      referralCode: await uniqueReferralCode(),
+      referralCode,
+      avatarUrl,
+      role: isDriver ? "DRIVER" : "USER",
+      driverProfile: isDriver ? { create: {} } : undefined,
+    },
+  });
+}
+
+export async function promoteToDriver(userId) {
+  return prisma.user.update({
+    where: { id: userId },
+    data: {
+      role: "DRIVER",
+      driverProfile: {
+        connectOrCreate: {
+          where: { userId },
+          create: {},
+        },
+      },
     },
   });
 }

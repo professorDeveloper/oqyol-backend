@@ -5,12 +5,15 @@ function makeMessage(error) {
   return { success: false, error, code: "TOO_MANY_REQUESTS", statusCode: 429 };
 }
 
+const skipInNonProd = () => env.NODE_ENV !== "production";
+
 export const globalLimiter = rateLimit({
   windowMs: env.THROTTLE_TTL * 1000,
   max: env.THROTTLE_LIMIT,
   standardHeaders: true,
   legacyHeaders: false,
   message: makeMessage("Too many requests"),
+  skip: skipInNonProd,
 });
 
 export const otpSendLimiter = rateLimit({
@@ -19,6 +22,7 @@ export const otpSendLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: makeMessage("Wait before requesting another OTP"),
+  skip: skipInNonProd,
 });
 
 export const otpVerifyLimiter = rateLimit({
@@ -27,4 +31,5 @@ export const otpVerifyLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: makeMessage("Too many OTP verification attempts"),
+  skip: skipInNonProd,
 });

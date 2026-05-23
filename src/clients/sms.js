@@ -16,6 +16,7 @@ async function fetchToken() {
   });
   cachedToken = res.data.data.token;
   tokenRefreshedAt = Date.now();
+  logger.info("eskiz: token refreshed");
   return cachedToken;
 }
 
@@ -31,6 +32,13 @@ function invalidateToken() {
   tokenRefreshedAt = 0;
 }
 
+async function postSms(token, payload) {
+  return axios.post(ESKIZ_SEND_URL, payload, {
+    headers: { Authorization: `Bearer ${token}` },
+    validateStatus: () => true,
+  });
+}
+
 export async function sendSms(phone, message) {
   if (env.OTP_DEMO_MODE) {
     logger.info("sms (demo)", { phone, message });
@@ -38,25 +46,39 @@ export async function sendSms(phone, message) {
   }
 
   const normalizedPhone = phone.replace(/^\+/, "");
-  const token = await getToken();
+  const payload = { mobile_phone: normalizedPhone, message, from: env.ESKIZ_FROM };
 
-  try {
-    await axios.post(
-      ESKIZ_SEND_URL,
-      { mobile_phone: normalizedPhone, message, from: env.ESKIZ_FROM },
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-  } catch (err) {
-    if (err.response?.data?.message === "token_invalid") {
-      invalidateToken();
-      const fresh = await getToken();
-      await axios.post(
-        ESKIZ_SEND_URL,
-        { mobile_phone: normalizedPhone, message, from: env.ESKIZ_FROM },
-        { headers: { Authorization: `Bearer ${fresh}` } }
-      );
-      return;
-    }
-    throw err;
+  let token = await getToken();
+  let res = await postSms(token, payload);
+
+  if (res.data?.message === "token_invalid" || res.status === 401) {
+    invalidateToken();
+    token = await getToken();
+    res = await postSms(token, payload);
   }
+
+  if (res.status >= 200 && res.status < 300) {
+    logger.info("eskiz: sms accepted", {
+      phone: normalizedPhone,
+      from: env.ESKIZ_FROM,
+      status: res.status,
+      eskizStatus: res.data?.status,
+      messageId: res.data?.id,
+      data: res.data,
+    });
+    return res.data;
+  }
+
+  logger.error("eskiz: sms send failed", {
+    phone: normalizedPhone,
+    from: env.ESKIZ_FROM,
+    status: res.status,
+    body: res.data,
+  });
+  const err = new Error(
+    `Eskiz SMS failed: status=${res.status} body=${JSON.stringify(res.data)}`
+  );
+  err.eskizStatus = res.status;
+  err.eskizBody = res.data;
+  throw err;
 }

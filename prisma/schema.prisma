@@ -198,42 +198,58 @@ model DriverProfile {
   createdAt      DateTime     @default(now()) @map("created_at")
   updatedAt      DateTime     @updatedAt @map("updated_at")
 
-  user     User      @relation(fields: [userId], references: [id])
-  vehicles Vehicle[]
+  user    User     @relation(fields: [userId], references: [id])
+  vehicle Vehicle?
 
   @@map("driver_profiles")
 }
 
 model Vehicle {
   id          String   @id @default(uuid())
-  driverId    String   @map("driver_id")
+  driverId    String   @unique @map("driver_id")
   brand       String
   model       String
   color       String
-  plateNumber String   @map("plate_number")
+  plateNumber String   @unique @map("plate_number")
   year        Int
   seatCount   Int      @map("seat_count")
   photoUrl    String?  @map("photo_url")
   isActive    Boolean  @default(true) @map("is_active")
   createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
-  driver DriverProfile @relation(fields: [driverId], references: [id])
+  driver DriverProfile @relation(fields: [driverId], references: [id], onDelete: Cascade)
 
   @@map("vehicles")
 }
 
 model Region {
   id       String  @id @default(uuid())
-  name     String
+  name     String  @unique
+  code     String? @unique
   lat      Float
   lng      Float
   radiusKm Float   @map("radius_km")
   isActive Boolean @default(true) @map("is_active")
 
-  fromRoutes Route[] @relation("FromRegion")
-  toRoutes   Route[] @relation("ToRegion")
+  fromRoutes Route[]    @relation("FromRegion")
+  toRoutes   Route[]    @relation("ToRegion")
+  districts  District[]
 
   @@map("regions")
+}
+
+model District {
+  id       String  @id @default(uuid())
+  regionId String  @map("region_id")
+  name     String
+  isActive Boolean @default(true) @map("is_active")
+
+  region Region @relation(fields: [regionId], references: [id], onDelete: Cascade)
+
+  @@unique([regionId, name])
+  @@index([regionId])
+  @@map("districts")
 }
 
 model Route {

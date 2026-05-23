@@ -31,7 +31,19 @@ const schema = z.object({
   THROTTLE_TTL: z.coerce.number().int().positive().default(60),
   THROTTLE_LIMIT: z.coerce.number().int().positive().default(100),
 
+  COMMISSION_RATE: z.coerce.number().min(0).max(1).default(0.1),
+  ORDER_TTL_MINUTES: z.coerce.number().int().positive().default(30),
+  OFFER_TTL_MINUTES: z.coerce.number().int().positive().default(10),
+  ARRIVAL_RADIUS_METERS: z.coerce.number().int().positive().default(150),
+
   CORS_ORIGINS: z.string().default("*"),
+
+  R2_ACCOUNT_ID: z.string().default(""),
+  R2_ACCESS_KEY_ID: z.string().default(""),
+  R2_SECRET_ACCESS_KEY: z.string().default(""),
+  R2_BUCKET: z.string().default(""),
+  R2_PUBLIC_URL: z.string().default(""),
+  R2_ENDPOINT: z.string().default(""),
 });
 
 const parsed = schema.safeParse(process.env);

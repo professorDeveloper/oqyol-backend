@@ -6,9 +6,10 @@ COPY prisma ./prisma/
 COPY prisma.config.js ./
 
 RUN npm ci --omit=dev
-RUN npx prisma generate
 
 COPY . .
 
 EXPOSE 3000
-CMD ["node", "src/server.js"]
+# Regenerate Prisma client at container start to guarantee it matches the schema.
+# (BuildKit layer caching has been unreliable for prisma generate on this setup.)
+CMD ["sh", "-c", "npx prisma generate && node src/server.js"]

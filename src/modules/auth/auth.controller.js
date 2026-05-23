@@ -13,7 +13,10 @@ export async function verifyOtp(req, res) {
 }
 
 export async function completeRegister(req, res) {
-  const result = await authService.completeRegister(req.body);
+  const result = await authService.completeRegister({
+    ...req.body,
+    avatarFile: req.file,
+  });
   ok(res, result, 201);
 }
 

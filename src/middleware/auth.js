@@ -30,3 +30,16 @@ export const requireAuth = asyncHandler(async (req, _res, next) => {
   req.sessionId = payload.sessionId;
   next();
 });
+
+export function requireRole(...roles) {
+  const allowed = new Set(roles);
+  return (req, _res, next) => {
+    if (!req.user) {
+      return next(new UnauthorizedError("Authentication required", "TOKEN_MISSING"));
+    }
+    if (!allowed.has(req.user.role)) {
+      return next(new ForbiddenError("Insufficient role", "FORBIDDEN_ROLE"));
+    }
+    next();
+  };
+}

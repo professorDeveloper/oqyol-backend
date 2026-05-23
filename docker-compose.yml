@@ -24,6 +24,8 @@ services:
     container_name: rideshare-api-app
     ports:
       - '3000:3000'
+    env_file:
+      - .env
     environment:
       - DATABASE_URL=postgresql://rideshare_user:rideshare_pass@postgres:5432/rideshare?schema=public
       - REDIS_HOST=redis

@@ -2,6 +2,8 @@ import { env } from "../../config/env.js";
 import * as authRepo from "./auth.repository.js";
 import * as otpService from "./otp.service.js";
 import * as tokenService from "./token.service.js";
+import * as walletService from "../wallet/wallet.service.js";
+import * as r2 from "../../clients/r2.js";
 import {
   BadRequestError,
   ForbiddenError,
@@ -20,7 +22,8 @@ function parseDurationToMs(value) {
 
 const REFRESH_TTL_MS = parseDurationToMs(env.JWT_REFRESH_EXPIRY);
 
-function publicUser(user) {
+async function publicUser(user) {
+  const balance = user.role === "DRIVER" ? await walletService.getDriverBalance(user.id) : null;
   return {
     id: user.id,
     phone: user.phone,
@@ -30,6 +33,7 @@ function publicUser(user) {
     registeredApp: user.registeredApp,
     avatarUrl: user.avatarUrl,
     referralCode: user.referralCode,
+    balance,
   };
 }
 
@@ -56,14 +60,16 @@ async function createSessionAndTokens(user, deviceId, deviceName) {
 
 /**
  * Decides login outcome based on user role and which app is requesting.
- * - PASSENGER app: only USER role of registeredApp=PASSENGER may log in.
- * - DRIVER app: only users of registeredApp=DRIVER. Approved (role=DRIVER) →
- *   AUTHENTICATED, otherwise (still role=USER) → DRIVER_APPROVAL_PENDING.
+ * - PASSENGER app: only registeredApp=PASSENGER users may log in.
+ * - DRIVER app: registeredApp=DRIVER users; legacy non-driver-role users are
+ *   auto-promoted at login (no admin approval required for now).
  * - ADMIN role: never allowed in either mobile app.
  */
 function resolveLoginStatus(user, appType) {
+  // Admins (role=ADMIN) may log in from any appType — the web panel sends
+  // PASSENGER; mobile apps will block admin endpoints via requireRole anyway.
   if (user.role === "ADMIN") {
-    throw new ForbiddenError("Admins must use the web panel", "WRONG_APP");
+    return "AUTHENTICATED";
   }
 
   if (user.registeredApp !== appType) {
@@ -73,10 +79,6 @@ function resolveLoginStatus(user, appType) {
         : "This phone is registered as a driver. Use the driver app.",
       "WRONG_APP"
     );
-  }
-
-  if (appType === "DRIVER" && user.role !== "DRIVER") {
-    return "DRIVER_APPROVAL_PENDING";
   }
 
   return "AUTHENTICATED";
@@ -90,11 +92,12 @@ export async function requestOtp(phone) {
 export async function verifyOtp({ phone, code, deviceId, deviceName, appType }) {
   await otpService.verifyOtp(phone, code);
 
-  const user = await authRepo.findUserByPhone(phone);
+  let user = await authRepo.findUserByPhone(phone);
 
   if (!user) {
     const registerToken = tokenService.signRegisterToken(phone, deviceId, deviceName, appType);
     return {
+      isNewUser: true,
       status: "REGISTRATION_REQUIRED",
       registerToken,
     };
@@ -104,18 +107,23 @@ export async function verifyOtp({ phone, code, deviceId, deviceName, appType }) 
     throw new ForbiddenError("Account deactivated", "ACCOUNT_DEACTIVATED");
   }
 
+  if (appType === "DRIVER" && user.registeredApp === "DRIVER" && user.role !== "DRIVER") {
+    user = await authRepo.promoteToDriver(user.id);
+  }
+
   const status = resolveLoginStatus(user, appType);
   const tokens = await createSessionAndTokens(user, deviceId, deviceName);
 
   return {
+    isNewUser: false,
     status,
     accessToken: tokens.accessToken,
     refreshToken: tokens.refreshToken,
-    user: publicUser(user),
+    user: await publicUser(user),
   };
 }
 
-export async function completeRegister({ registerToken, firstName, lastName, referralCode }) {
+export async function completeRegister({ registerToken, firstName, lastName, referralCode, avatarFile }) {
   let payload;
   try {
     payload = tokenService.verifyRegisterToken(registerToken);
@@ -137,22 +145,33 @@ export async function completeRegister({ registerToken, firstName, lastName, ref
     referredBy = referrer.id;
   }
 
+  let avatarUrl = null;
+  if (avatarFile) {
+    const uploaded = await r2.uploadBuffer({
+      buffer: avatarFile.buffer,
+      contentType: avatarFile.mimetype,
+      prefix: "avatars",
+      originalName: avatarFile.originalname,
+    });
+    avatarUrl = uploaded.url;
+  }
+
   const user = await authRepo.createUser({
     phone: payload.phone,
     firstName,
     lastName,
     registeredApp: payload.appType,
     referredBy,
+    avatarUrl,
   });
 
   const tokens = await createSessionAndTokens(user, payload.deviceId, payload.deviceName);
-  const status = payload.appType === "DRIVER" ? "DRIVER_APPROVAL_PENDING" : "AUTHENTICATED";
 
   return {
-    status,
+    status: "AUTHENTICATED",
     accessToken: tokens.accessToken,
     refreshToken: tokens.refreshToken,
-    user: publicUser(user),
+    user: await publicUser(user),
   };
 }
 

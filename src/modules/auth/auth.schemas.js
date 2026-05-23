@@ -58,6 +58,7 @@ export const userPublicSchema = z.object({
   registeredApp: appType,
   avatarUrl: z.string().nullable(),
   referralCode: z.string(),
+  balance: z.number().nullable().describe("Driver wallet balance. null for non-driver users."),
 });
 
 export const sessionSchema = z.object({
@@ -86,18 +87,10 @@ export const sendOtpResponseSchema = envelope(
   })
 );
 
-export const verifyOtpAuthenticatedResponseSchema = envelope(
+export const verifyOtpExistingUserResponseSchema = envelope(
   z.object({
+    isNewUser: z.literal(false),
     status: z.literal("AUTHENTICATED"),
-    accessToken: z.string(),
-    refreshToken: z.string(),
-    user: userPublicSchema,
-  })
-);
-
-export const verifyOtpDriverPendingResponseSchema = envelope(
-  z.object({
-    status: z.literal("DRIVER_APPROVAL_PENDING"),
     accessToken: z.string(),
     refreshToken: z.string(),
     user: userPublicSchema,
@@ -106,23 +99,15 @@ export const verifyOtpDriverPendingResponseSchema = envelope(
 
 export const verifyOtpRegistrationRequiredResponseSchema = envelope(
   z.object({
+    isNewUser: z.literal(true),
     status: z.literal("REGISTRATION_REQUIRED"),
     registerToken: z.string(),
   })
 );
 
-export const completeRegisterAuthenticatedResponseSchema = envelope(
+export const completeRegisterResponseSchema = envelope(
   z.object({
     status: z.literal("AUTHENTICATED"),
-    accessToken: z.string(),
-    refreshToken: z.string(),
-    user: userPublicSchema,
-  })
-);
-
-export const completeRegisterDriverPendingResponseSchema = envelope(
-  z.object({
-    status: z.literal("DRIVER_APPROVAL_PENDING"),
     accessToken: z.string(),
     refreshToken: z.string(),
     user: userPublicSchema,

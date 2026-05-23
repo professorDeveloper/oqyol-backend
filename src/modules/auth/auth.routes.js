@@ -10,6 +10,7 @@ import {
 } from "./auth.schemas.js";
 import { validate } from "../../middleware/validate.js";
 import { requireAuth } from "../../middleware/auth.js";
+import { singleImage } from "../../middleware/upload.js";
 import { asyncHandler } from "../../shared/asyncHandler.js";
 import { otpSendLimiter, otpVerifyLimiter } from "../../middleware/rateLimit.js";
 
@@ -31,6 +32,7 @@ router.post(
 
 router.post(
   "/complete-register",
+  singleImage("avatar"),
   validate(completeRegisterSchema),
   asyncHandler(authController.completeRegister)
 );
