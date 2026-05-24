@@ -288,7 +288,9 @@ Qidiruv — frontend substring match `name + region.name`.
 - `moveend` → pin lat/lng → reverse-geocode (haversine `regions`/`districts` ichidan)
 - Sheet'da viloyat/tuman avto-yangilanadi
 
-**Saqlash:** `dropoffLat`, `dropoffLng`, `dropoffRegionId`, `dropoffDistrictId`.
+**Saqlash:** `dropoffLat`, `dropoffLng`, `dropoffAddress` (reverse-geocode natija matni: `"Samarqand, Registon ko'chasi 5"`), shuningdek `dropoffRegionId` (Route topish uchun).
+
+> **Backend tushadi:** `pickupLat/Lng/Address` va `dropoffLat/Lng/Address` endi `POST /api/orders` body'sida yuboriladi va `Order.pickup{lat,lng,address}` / `Order.dropoff{...}` sifatida response'da qaytadi. Driver Mapbox xaritada aniq pin'ga ketadi (viloyat markazi emas).
 
 ### 5.3 O3 — "Qayerdan?" tanlash (default: uy)
 
@@ -326,12 +328,28 @@ Pickup default — uy manzili (A5b'da saqlangan). Tahrirlash kerak bo'lsa, O1/O2
 
 **API ✅:**
 - `GET /api/routes?fromRegionId={a}&toRegionId={b}` — `routeId`, `distanceKm`, `estimatedDurationMin`, `basePrice` topiladi
-- `POST /api/orders { routeId, passengerPrice, seatsRequested?, rideType?, scheduledAt? }`
+- `POST /api/orders` body:
+  ```json
+  {
+    "routeId": "<uuid>",
+    "passengerPrice": 120000,
+    "seatsRequested": 1,
+    "rideType": "SOLO",
+    "pickupLat": 41.311081,
+    "pickupLng": 69.240562,
+    "pickupAddress": "Toshkent, Yunusobod, Bobur ko'chasi 12",
+    "dropoffLat": 39.654009,
+    "dropoffLng": 66.959882,
+    "dropoffAddress": "Samarqand, Registon maydoni 5",
+    "scheduledAt": null
+  }
+  ```
   - **`passengerPrice` MAJBURIY** — `basePrice`ning 0.3x–5x oralig'ida
+  - **`pickup*` / `dropoff*`** — Mapbox'dan kelgan aniq nuqtalar (lat+lng birga; address — reverse-geocode matni). Schema-validatsiya `lat`/`lng`ni juftlikda talab qiladi.
   - `seatsRequested` default 1 (max 4)
   - `rideType` default "SOLO" (yoki "CARPOOL")
   - `scheduledAt` ixtiyoriy (oldindan bron)
-  - `201` → Orders tab → Order Detail (tracking)
+  - `201` → response'da `data.pickup`, `data.dropoff` obyektlari qaytadi → Orders tab → Order Detail (tracking)
   - `400 PRICE_OUT_OF_RANGE` → "Narx 36 000–600 000 so'm oralig'ida bo'lishi kerak"
   - `400 ROUTE_INVALID` → route topilmadi yoki o'chirilgan
   - `409 ACTIVE_ORDER_EXISTS` → "Sizda allaqachon faol buyurtma bor"
@@ -418,7 +436,7 @@ Status bo'yicha UI o'zgaradi.
 - `POST /api/orders/{id}/cancel` → Orders ro'yxatga toast bilan
 - `GET /api/orders/{id}` — order tafsilot (refresh)
 
-**Mapbox:** Polyline pickup→dropoff. Driver markerlar **kelajakda** (`/api/drivers/nearby` ⏳).
+**Mapbox:** Polyline `order.pickup.{lat,lng}` → `order.dropoff.{lat,lng}` (aniq nuqtalar — viloyat markazi emas). 2 marker (yashil pickup, qizil dropoff) + `fitBounds`. Driver live markerlar **kelajakda** (`/api/drivers/nearby` ⏳).
 
 #### O6b — ACCEPTED (haydovchi yo'lda)
 
@@ -625,8 +643,8 @@ Boshqa tab'larda: har 60s `unreadTotal` ni tekshirish → tab badge'ini yangilas
 | Ekran | Maqsad | Mapbox feature | Status |
 |---|---|---|---|
 | **A5b** — uy manzili | GPS dan reverse-geocode | Fixed center pin + camera | ✅ Implement qilinadi |
-| **O2** — manzil pin | Aniq nuqta tanlash | Fixed center pin + reverse-geocode | ✅ Implement qilinadi |
-| **O4** — yo'l preview | Pickup→dropoff | Polyline + 2 marker + fitBounds | ✅ Implement qilinadi (to'g'ri chiziq, faza 1) |
+| **O2** — manzil pin | Aniq nuqta tanlash | Fixed center pin + reverse-geocode | ✅ Implement qilinadi — lat/lng/address `POST /api/orders` ga ketadi |
+| **O4** — yo'l preview | Pickup→dropoff | Polyline + 2 marker + fitBounds | ✅ Implement qilinadi (to'g'ri chiziq, faza 1) — marker'lar `pickup`/`dropoff` lat/lng dan |
 | **O6a** — OPEN | Yo'l ko'rsatish | Polyline | ✅ Implement qilinadi |
 | **O6b** — ACCEPTED | Driver tracking | Animated marker + follow camera | ⏳ Faza 2 — `/api/orders/:id/driver-location` kerak |
 | **O6c** — ARRIVED | Pulse animatsiya | Marker pulse layer | ⏳ Faza 2 (driver pos kerak) |
@@ -742,6 +760,9 @@ OPEN ──takliflar──> [User Accept]
 ### 11.2 🔧 DIQQAT: o'zgargan endpoint'lar
 
 - **`POST /api/orders`** — endi `passengerPrice` **majburiy field**. `route.basePrice` ning 0.3x–5x oralig'ida bo'lishi shart. Tashqarida — `400 PRICE_OUT_OF_RANGE`. BACKEND_SPEC §Orders rule 1'ga to'liq mos.
+- **`POST /api/orders` 🆕 geo maydonlar**: `pickupLat/Lng/Address`, `dropoffLat/Lng/Address`. Schema-level: `lat` va `lng` har doim juftlikda yuborilishi kerak (faqat bittasi → 422). Address — Mapbox reverse-geocode matni (max 300 chars). Hozircha optional (eski mijozlar uchun), lekin **yangi mobil versiyalar har doim yuborishi shart** — driver xaritada aniq pin'ga ketishi uchun.
+- **Order response shape 🆕**: `data.pickup` va `data.dropoff` — `{ lat, lng, address }` obyektlari (yo'q bo'lsa `null`). `GET /api/orders/mine`, `GET /api/orders/{id}`, `GET /api/driver/orders/open` — barchasi shu shape'ni qaytaradi.
+- **Driver `arrive` 🆕 mantig'i**: agar order'da aniq `pickupLat/Lng` bo'lsa — driver shu nuqtaga yaqin (`ARRIVAL_RADIUS_METERS` ichida) bo'lishi kerak; yo'q bo'lsa eski xulq (viloyat markazi). UX uchun ahamiyatsiz, lekin driver mobile'da "yetib keldim" tugmasi endi aniq pickup pin atrofida ishlaydi.
 
 ### 11.3 ⏳ KELAJAK (hozir mavjud emas)
 

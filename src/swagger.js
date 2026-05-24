@@ -446,6 +446,16 @@ function buildDoc(audience) {
     seatsRequested: 1,
     passengerPrice: 120000,
     finalPrice: null,
+    pickup: {
+      lat: 41.311081,
+      lng: 69.240562,
+      address: "Toshkent, Yunusobod, Bobur ko'chasi 12",
+    },
+    dropoff: {
+      lat: 39.654009,
+      lng: 66.959882,
+      address: "Samarqand, Registon maydoni 5",
+    },
     route: {
       id: exRoute.id,
       distanceKm: 308,
@@ -584,7 +594,7 @@ function buildDoc(audience) {
   define({ audiences: ["admin"], method: "patch", path: "/api/admin/drivers/{id}", tags: ["admin-users"], summary: "Update driver profile (status, bio, suspendedUntil)", role: "ADMIN" });
 
   // Orders — passenger
-  define({ audiences: ["passenger"], method: "post", path: "/api/orders", tags: ["orders"], summary: "Create order. Uses Route.basePrice as initial price." });
+  define({ audiences: ["passenger"], method: "post", path: "/api/orders", tags: ["orders"], summary: "Create order. Body: { routeId, passengerPrice (0.3x–5x basePrice), seatsRequested, rideType, pickup{Lat,Lng,Address}, dropoff{Lat,Lng,Address}, scheduledAt? }. Pickup/dropoff Mapbox tanlangan aniq punkt." });
   define({ audiences: ["passenger"], method: "get", path: "/api/orders/mine", tags: ["orders"], summary: "List my orders (filter by status)" });
   define({ audiences: ["passenger"], method: "get", path: "/api/orders/{id}", tags: ["orders"], summary: "Order detail" });
   define({ audiences: ["passenger"], method: "post", path: "/api/orders/{id}/cancel", tags: ["orders"], summary: "Cancel order. Releases driver commission hold if any." });

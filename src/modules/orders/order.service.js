@@ -21,6 +21,14 @@ function publicOrder(o, viewerRole = null) {
     seatsRequested: o.seatsRequested,
     passengerPrice: Number(o.passengerPrice),
     finalPrice: o.finalPrice ? Number(o.finalPrice) : null,
+    pickup:
+      o.pickupLat != null && o.pickupLng != null
+        ? { lat: o.pickupLat, lng: o.pickupLng, address: o.pickupAddress ?? null }
+        : null,
+    dropoff:
+      o.dropoffLat != null && o.dropoffLng != null
+        ? { lat: o.dropoffLat, lng: o.dropoffLng, address: o.dropoffAddress ?? null }
+        : null,
     route: o.route
       ? {
           id: o.route.id,
@@ -113,6 +121,12 @@ export async function createOrder(userId, body) {
         rideType: body.rideType,
         seatsRequested: body.seatsRequested,
         passengerPrice: body.passengerPrice,
+        pickupLat: body.pickupLat ?? null,
+        pickupLng: body.pickupLng ?? null,
+        pickupAddress: body.pickupAddress ?? null,
+        dropoffLat: body.dropoffLat ?? null,
+        dropoffLng: body.dropoffLng ?? null,
+        dropoffAddress: body.dropoffAddress ?? null,
         scheduledAt: body.scheduledAt ?? null,
         expiresAt,
       },
@@ -216,8 +230,13 @@ export async function driverArrive(orderId, driver, { lat, lng, accuracyMeters }
     throw new BadRequestError("Order is not in ACCEPTED state", "INVALID_STATE");
   }
 
-  const pickup = order.route.fromRegion;
-  const distance = haversineMeters({ lat, lng }, { lat: pickup.lat, lng: pickup.lng });
+  // Yo'lovchi aniq pin tanlagan bo'lsa — o'sha nuqtaga yaqinligini tekshiramiz;
+  // aks holda viloyat markazi (eski hulq, backward-compat).
+  const pickupPoint =
+    order.pickupLat != null && order.pickupLng != null
+      ? { lat: order.pickupLat, lng: order.pickupLng }
+      : { lat: order.route.fromRegion.lat, lng: order.route.fromRegion.lng };
+  const distance = haversineMeters({ lat, lng }, pickupPoint);
   const isValid = distance <= env.ARRIVAL_RADIUS_METERS;
 
   return prisma.$transaction(async (tx) => {
