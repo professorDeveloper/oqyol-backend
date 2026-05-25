@@ -7,6 +7,9 @@ const orderInclude = {
       toRegion: { select: { id: true, name: true, lat: true, lng: true } },
     },
   },
+  // Route'siz orderlar uchun to'g'ridan-to'g'ri Region linklari.
+  fromRegion: { select: { id: true, name: true, lat: true, lng: true } },
+  toRegion: { select: { id: true, name: true, lat: true, lng: true } },
   passenger: { select: { id: true, firstName: true, lastName: true, phone: true } },
   driver: { select: { id: true, firstName: true, lastName: true, phone: true } },
   offers: { orderBy: { createdAt: "desc" } },
@@ -30,15 +33,21 @@ export function logStatusChange({ orderId, status, changedBy, metadata = null },
   });
 }
 
+function statusWhere(status) {
+  if (!status) return {};
+  const arr = Array.isArray(status) ? status : [status];
+  return arr.length === 1 ? { status: arr[0] } : { status: { in: arr } };
+}
+
 export function countPassengerOrders({ userId, status }) {
   return prisma.order.count({
-    where: { passengerId: userId, ...(status ? { status } : {}) },
+    where: { passengerId: userId, ...statusWhere(status) },
   });
 }
 
 export function listPassengerOrders({ userId, status }, { skip, take }) {
   return prisma.order.findMany({
-    where: { passengerId: userId, ...(status ? { status } : {}) },
+    where: { passengerId: userId, ...statusWhere(status) },
     orderBy: { createdAt: "desc" },
     skip,
     take,
@@ -46,19 +55,27 @@ export function listPassengerOrders({ userId, status }, { skip, take }) {
   });
 }
 
+// Order viloyat bo'yicha qidirilganda — route bog'langan bo'lsa route'dagi
+// regions'ga, route'siz bo'lsa orderdagi to'g'ridan-to'g'ri fromRegionId/toRegionId'ga moslanadi.
+function regionFilterWhere(filter) {
+  if (!filter.fromRegionId && !filter.toRegionId) return {};
+  const routeSide = {
+    ...(filter.fromRegionId ? { fromRegionId: filter.fromRegionId } : {}),
+    ...(filter.toRegionId ? { toRegionId: filter.toRegionId } : {}),
+  };
+  const directSide = {
+    ...(filter.fromRegionId ? { fromRegionId: filter.fromRegionId } : {}),
+    ...(filter.toRegionId ? { toRegionId: filter.toRegionId } : {}),
+  };
+  return { OR: [{ route: routeSide }, directSide] };
+}
+
 export function countOpenOrders(filter) {
   return prisma.order.count({
     where: {
       status: "OPEN",
       expiresAt: { gt: new Date() },
-      ...(filter.fromRegionId || filter.toRegionId
-        ? {
-            route: {
-              ...(filter.fromRegionId ? { fromRegionId: filter.fromRegionId } : {}),
-              ...(filter.toRegionId ? { toRegionId: filter.toRegionId } : {}),
-            },
-          }
-        : {}),
+      ...regionFilterWhere(filter),
     },
   });
 }
@@ -68,14 +85,7 @@ export function listOpenOrders(filter, { skip, take }) {
     where: {
       status: "OPEN",
       expiresAt: { gt: new Date() },
-      ...(filter.fromRegionId || filter.toRegionId
-        ? {
-            route: {
-              ...(filter.fromRegionId ? { fromRegionId: filter.fromRegionId } : {}),
-              ...(filter.toRegionId ? { toRegionId: filter.toRegionId } : {}),
-            },
-          }
-        : {}),
+      ...regionFilterWhere(filter),
     },
     orderBy: { createdAt: "desc" },
     skip,

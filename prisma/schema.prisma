@@ -105,18 +105,18 @@ enum Severity {
 }
 
 model User {
-  id           String   @id @default(uuid())
-  phone        String   @unique
-  firstName    String   @map("first_name")
-  lastName     String   @map("last_name")
-  role         UserRole @default(USER)
-  registeredApp AppType @default(PASSENGER) @map("registered_app")
-  avatarUrl    String?  @map("avatar_url")
-  referralCode String   @unique @map("referral_code")
-  referredBy   String?  @map("referred_by")
-  isActive     Boolean  @default(true) @map("is_active")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  id            String   @id @default(uuid())
+  phone         String   @unique
+  firstName     String   @map("first_name")
+  lastName      String   @map("last_name")
+  role          UserRole @default(USER)
+  registeredApp AppType  @default(PASSENGER) @map("registered_app")
+  avatarUrl     String?  @map("avatar_url")
+  referralCode  String   @unique @map("referral_code")
+  referredBy    String?  @map("referred_by")
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
 
   referrer             User?                @relation("Referral", fields: [referredBy], references: [id])
   referrals            User[]               @relation("Referral")
@@ -235,6 +235,8 @@ model Region {
   fromRoutes Route[]    @relation("FromRegion")
   toRoutes   Route[]    @relation("ToRegion")
   districts  District[]
+  fromOrders Order[]    @relation("OrderFromRegion")
+  toOrders   Order[]    @relation("OrderToRegion")
 
   @@map("regions")
 }
@@ -273,7 +275,9 @@ model Order {
   id                 String      @id @default(uuid())
   passengerId        String      @map("passenger_id")
   driverId           String?     @map("driver_id")
-  routeId            String      @map("route_id")
+  routeId            String?     @map("route_id")
+  fromRegionId       String?     @map("from_region_id")
+  toRegionId         String?     @map("to_region_id")
   status             OrderStatus @default(OPEN)
   rideType           RideType    @default(SOLO) @map("ride_type")
   seatsRequested     Int         @default(1) @map("seats_requested")
@@ -299,7 +303,9 @@ model Order {
   passenger      User                 @relation("Passenger", fields: [passengerId], references: [id])
   driver         User?                @relation("Driver", fields: [driverId], references: [id])
   canceller      User?                @relation("Canceller", fields: [cancelledBy], references: [id])
-  route          Route                @relation(fields: [routeId], references: [id])
+  route          Route?               @relation(fields: [routeId], references: [id])
+  fromRegion     Region?              @relation("OrderFromRegion", fields: [fromRegionId], references: [id])
+  toRegion       Region?              @relation("OrderToRegion", fields: [toRegionId], references: [id])
   offers         Offer[]
   statusHistory  OrderStatusHistory[]
   locationProofs OrderLocationProof[]
@@ -308,6 +314,7 @@ model Order {
   disputes       Dispute[]
 
   @@index([status, routeId])
+  @@index([status, fromRegionId, toRegionId])
   @@index([passengerId, status])
   @@index([driverId, status])
   @@index([expiresAt])
@@ -376,7 +383,7 @@ model Wallet {
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @updatedAt @map("updated_at")
 
-  user         User               @relation(fields: [userId], references: [id])
+  user         User                @relation(fields: [userId], references: [id])
   transactions WalletTransaction[]
   holds        CommissionHold[]
 

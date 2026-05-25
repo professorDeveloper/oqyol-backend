@@ -8,17 +8,22 @@ const lng = z.coerce.number().min(-180).max(180);
 const addressText = z.string().trim().min(2).max(300);
 
 export const createOrderSchema = z.object({
-  routeId: uuid,
+  // routeId ixtiyoriy. Agar berilsa — backend basePrice asosida 0.3x–5x narx
+  // tekshiruvi qiladi. Agar berilmasa — fromRegionId+toRegionId majburiy va
+  // narx faqat zod min/max chegarasi ichida bo'lishi yetadi (passenger erkin
+  // belgilaydi).
+  routeId: uuid.optional(),
+  fromRegionId: uuid.optional(),
+  toRegionId: uuid.optional(),
   passengerPrice: z.coerce
     .number()
     .positive()
+    .min(1000)
     .max(100_000_000)
-    .describe("Yo'lovchi taklif qilayotgan narx (so'm). 0.3x–5x basePrice oralig'ida bo'lishi shart."),
+    .describe("Yo'lovchi taklif qilayotgan narx (so'm). Route bo'lsa 0.3x–5x basePrice oralig'ida; aks holda 1 000 – 100 000 000 oralig'ida."),
   seatsRequested: z.coerce.number().int().min(1).max(4).default(1),
   rideType: z.enum(["SOLO", "CARPOOL"]).default("SOLO"),
   scheduledAt: z.coerce.date().optional(),
-  // Mapbox tanlangan aniq A→B punktlar. Hozircha optional — eski mijozlar buzilmasligi uchun;
-  // mobil ilovaning yangi versiyasi har doim yuboradi.
   pickupLat: lat.optional(),
   pickupLng: lng.optional(),
   pickupAddress: addressText.optional(),
@@ -26,6 +31,13 @@ export const createOrderSchema = z.object({
   dropoffLng: lng.optional(),
   dropoffAddress: addressText.optional(),
 })
+  .refine(
+    (v) => v.routeId != null || (v.fromRegionId != null && v.toRegionId != null),
+    {
+      message: "routeId yoki (fromRegionId + toRegionId) yuborilishi kerak",
+      path: ["routeId"],
+    }
+  )
   .refine(
     (v) =>
       (v.pickupLat == null && v.pickupLng == null) ||
@@ -41,8 +53,25 @@ export const createOrderSchema = z.object({
 
 export const orderIdParamSchema = z.object({ id: uuid });
 
+const ORDER_STATUSES = ["OPEN", "ACCEPTED", "ARRIVED", "FOUND", "CANCELLED", "EXPIRED", "DISPUTED"];
+const orderStatusEnum = z.enum(ORDER_STATUSES);
+
+// Mobil bir nechta statusni filterlash uchun CSV yuboradi (?status=OPEN,ACCEPTED,ARRIVED,FOUND).
+// Bitta status ham, undefined ham qo'llab-quvvatlanadi.
+const statusListSchema = z.preprocess(
+  (v) => {
+    if (v == null) return undefined;
+    if (Array.isArray(v)) return v;
+    const s = String(v).trim();
+    if (!s) return undefined;
+    const parts = s.split(",").map((x) => x.trim()).filter(Boolean);
+    return parts.length ? parts : undefined;
+  },
+  z.array(orderStatusEnum).min(1).optional()
+);
+
 export const passengerOrderListQuerySchema = paginationQuerySchema.extend({
-  status: z.enum(["OPEN", "ACCEPTED", "ARRIVED", "FOUND", "CANCELLED", "EXPIRED", "DISPUTED"]).optional(),
+  status: statusListSchema,
 });
 
 export const openOrdersQuerySchema = paginationQuerySchema.extend({

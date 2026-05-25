@@ -14,6 +14,9 @@ import {
 } from "../../shared/errors.js";
 
 function publicOrder(o, viewerRole = null) {
+  // Route'siz orderlar uchun fromRegion/toRegion to'g'ridan-to'g'ri orderdan keladi.
+  const fromRegion = o.route?.fromRegion ?? o.fromRegion ?? null;
+  const toRegion = o.route?.toRegion ?? o.toRegion ?? null;
   return {
     id: o.id,
     status: o.status,
@@ -29,6 +32,8 @@ function publicOrder(o, viewerRole = null) {
       o.dropoffLat != null && o.dropoffLng != null
         ? { lat: o.dropoffLat, lng: o.dropoffLng, address: o.dropoffAddress ?? null }
         : null,
+    fromRegion,
+    toRegion,
     route: o.route
       ? {
           id: o.route.id,
@@ -88,17 +93,38 @@ const PASSENGER_PRICE_MIN_MULTIPLIER = 0.3;
 const PASSENGER_PRICE_MAX_MULTIPLIER = 5;
 
 export async function createOrder(userId, body) {
-  const route = await prisma.route.findUnique({ where: { id: body.routeId } });
-  if (!route || !route.isActive) throw new BadRequestError("Route not available", "ROUTE_INVALID");
+  // Ikki yo'l: route'li (admin kiritgan yo'nalish, narx 0.3x–5x basePrice) yoki
+  // route'siz (passenger faqat from/to viloyatlar bilan erkin narx belgilaydi).
+  let route = null;
+  let fromRegionId = body.fromRegionId ?? null;
+  let toRegionId = body.toRegionId ?? null;
 
-  const basePrice = Number(route.basePrice);
-  const minPrice = basePrice * PASSENGER_PRICE_MIN_MULTIPLIER;
-  const maxPrice = basePrice * PASSENGER_PRICE_MAX_MULTIPLIER;
-  if (body.passengerPrice < minPrice || body.passengerPrice > maxPrice) {
-    throw new BadRequestError(
-      `Narx ${Math.round(minPrice)}–${Math.round(maxPrice)} so'm oralig'ida bo'lishi kerak (tavsiya: ${basePrice})`,
-      "PRICE_OUT_OF_RANGE"
-    );
+  if (body.routeId) {
+    route = await prisma.route.findUnique({ where: { id: body.routeId } });
+    if (!route || !route.isActive) {
+      throw new BadRequestError("Route not available", "ROUTE_INVALID");
+    }
+    fromRegionId = route.fromRegionId;
+    toRegionId = route.toRegionId;
+
+    const basePrice = Number(route.basePrice);
+    const minPrice = basePrice * PASSENGER_PRICE_MIN_MULTIPLIER;
+    const maxPrice = basePrice * PASSENGER_PRICE_MAX_MULTIPLIER;
+    if (body.passengerPrice < minPrice || body.passengerPrice > maxPrice) {
+      throw new BadRequestError(
+        `Narx ${Math.round(minPrice)}–${Math.round(maxPrice)} so'm oralig'ida bo'lishi kerak (tavsiya: ${basePrice})`,
+        "PRICE_OUT_OF_RANGE"
+      );
+    }
+  } else {
+    // Route'siz holatda fromRegionId/toRegionId mavjudligi schema'da tekshirilgan.
+    // Mavjud Region'lar haqiqiyligini tekshiramiz.
+    const regionCount = await prisma.region.count({
+      where: { id: { in: [fromRegionId, toRegionId] }, isActive: true },
+    });
+    if (regionCount !== (fromRegionId === toRegionId ? 1 : 2)) {
+      throw new BadRequestError("Unknown region", "REGION_INVALID");
+    }
   }
 
   const hasOpen = await prisma.order.findFirst({
@@ -117,7 +143,9 @@ export async function createOrder(userId, body) {
     const created = await repo.createOrder(
       {
         passengerId: userId,
-        routeId: route.id,
+        routeId: route?.id ?? null,
+        fromRegionId,
+        toRegionId,
         rideType: body.rideType,
         seatsRequested: body.seatsRequested,
         passengerPrice: body.passengerPrice,
@@ -231,11 +259,18 @@ export async function driverArrive(orderId, driver, { lat, lng, accuracyMeters }
   }
 
   // Yo'lovchi aniq pin tanlagan bo'lsa — o'sha nuqtaga yaqinligini tekshiramiz;
-  // aks holda viloyat markazi (eski hulq, backward-compat).
+  // aks holda viloyat markazi (route'dan yoki to'g'ridan-to'g'ri orderdan).
+  const fallbackRegion = order.route?.fromRegion ?? order.fromRegion;
+  if (
+    (order.pickupLat == null || order.pickupLng == null) &&
+    (!fallbackRegion || fallbackRegion.lat == null || fallbackRegion.lng == null)
+  ) {
+    throw new BadRequestError("Pickup location is missing on this order", "NO_PICKUP_REFERENCE");
+  }
   const pickupPoint =
     order.pickupLat != null && order.pickupLng != null
       ? { lat: order.pickupLat, lng: order.pickupLng }
-      : { lat: order.route.fromRegion.lat, lng: order.route.fromRegion.lng };
+      : { lat: fallbackRegion.lat, lng: fallbackRegion.lng };
   const distance = haversineMeters({ lat, lng }, pickupPoint);
   const isValid = distance <= env.ARRIVAL_RADIUS_METERS;
 

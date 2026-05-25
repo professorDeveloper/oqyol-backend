@@ -25,6 +25,13 @@ import {
   vehicleNullableResponseSchema,
   vehicleDeleteResponseSchema,
 } from "./modules/vehicles/vehicle.schemas.js";
+import {
+  createOrderSchema,
+  cancelOrderSchema,
+  arriveSchema,
+  foundSchema,
+} from "./modules/orders/order.schemas.js";
+import { createOfferSchema } from "./modules/offers/offer.schemas.js";
 
 const AUDIENCES = ["driver", "passenger", "admin"];
 const cache = {};
@@ -561,6 +568,7 @@ function buildDoc(audience) {
   define({ audiences: ["passenger", "driver"], method: "post", path: "/api/disputes", tags: ["disputes"], summary: "Open a dispute for an order" });
   define({ audiences: ["passenger", "driver"], method: "get", path: "/api/disputes", tags: ["disputes"], summary: "List my disputes (paginated, filter by status)" });
   define({ audiences: ["passenger", "driver"], method: "get", path: "/api/disputes/{id}", tags: ["disputes"], summary: "Dispute detail" });
+
   // Profile — driver-only
   define({ audiences: ["driver"], method: "get", path: "/api/driver/profile", tags: ["profile"], summary: "Get driver profile", role: "DRIVER", driverExample: exDriverProfile });
   define({ audiences: ["driver"], method: "patch", path: "/api/driver/profile", tags: ["profile"], summary: "Update driver preferences (smoking, ac, music, pets, bio)", role: "DRIVER", driverExample: { ...exDriverProfile, smokingAllowed: true } });
@@ -594,23 +602,23 @@ function buildDoc(audience) {
   define({ audiences: ["admin"], method: "patch", path: "/api/admin/drivers/{id}", tags: ["admin-users"], summary: "Update driver profile (status, bio, suspendedUntil)", role: "ADMIN" });
 
   // Orders — passenger
-  define({ audiences: ["passenger"], method: "post", path: "/api/orders", tags: ["orders"], summary: "Create order. Body: { routeId, passengerPrice (0.3x–5x basePrice), seatsRequested, rideType, pickup{Lat,Lng,Address}, dropoff{Lat,Lng,Address}, scheduledAt? }. Pickup/dropoff Mapbox tanlangan aniq punkt." });
-  define({ audiences: ["passenger"], method: "get", path: "/api/orders/mine", tags: ["orders"], summary: "List my orders (filter by status)" });
+  define({ audiences: ["passenger"], method: "post", path: "/api/orders", tags: ["orders"], summary: "Create order. Pickup/dropoff Mapbox tanlangan aniq punkt. passengerPrice 0.3x–5x basePrice oralig'ida bo'lishi shart.", body: createOrderSchema });
+  define({ audiences: ["passenger"], method: "get", path: "/api/orders/mine", tags: ["orders"], summary: "List my orders. ?status — bitta yoki CSV (masalan, ?status=OPEN,ACCEPTED,ARRIVED,FOUND). Standart pagination ?page&limit." });
   define({ audiences: ["passenger"], method: "get", path: "/api/orders/{id}", tags: ["orders"], summary: "Order detail" });
-  define({ audiences: ["passenger"], method: "post", path: "/api/orders/{id}/cancel", tags: ["orders"], summary: "Cancel order. Releases driver commission hold if any." });
+  define({ audiences: ["passenger"], method: "post", path: "/api/orders/{id}/cancel", tags: ["orders"], summary: "Cancel order. Releases driver commission hold if any.", body: cancelOrderSchema });
 
   // Orders — driver
   define({ audiences: ["driver"], method: "get", path: "/api/driver/orders/open", tags: ["orders"], summary: "List OPEN orders to bid on", role: "DRIVER", driverExample: exPage([exOrderOpen]) });
   define({ audiences: ["driver"], method: "get", path: "/api/driver/orders/{id}", tags: ["orders"], summary: "Order detail (driver view)", role: "DRIVER", driverExample: exOrderAccepted });
-  define({ audiences: ["driver"], method: "post", path: "/api/driver/orders/{id}/arrive", tags: ["orders"], summary: "Mark ARRIVED with GPS proof (lat/lng). Validated against pickup radius.", role: "DRIVER", driverExample: exOrderArrived });
-  define({ audiences: ["driver"], method: "post", path: "/api/driver/orders/{id}/found", tags: ["orders"], summary: "Confirm passenger boarded with their OTP. Captures commission.", role: "DRIVER", driverExample: exOrderFound });
-  define({ audiences: ["driver"], method: "post", path: "/api/driver/orders/{id}/cancel", tags: ["orders"], summary: "Driver cancels accepted order", role: "DRIVER", driverExample: exOrderCancelled });
+  define({ audiences: ["driver"], method: "post", path: "/api/driver/orders/{id}/arrive", tags: ["orders"], summary: "Mark ARRIVED with GPS proof (lat/lng). Validated against pickup radius.", role: "DRIVER", driverExample: exOrderArrived, body: arriveSchema });
+  define({ audiences: ["driver"], method: "post", path: "/api/driver/orders/{id}/found", tags: ["orders"], summary: "Confirm passenger boarded with their OTP. Captures commission.", role: "DRIVER", driverExample: exOrderFound, body: foundSchema });
+  define({ audiences: ["driver"], method: "post", path: "/api/driver/orders/{id}/cancel", tags: ["orders"], summary: "Driver cancels accepted order", role: "DRIVER", driverExample: exOrderCancelled, body: cancelOrderSchema });
 
   // Orders — admin
-  define({ audiences: ["admin"], method: "post", path: "/api/admin/orders/{id}/force-cancel", tags: ["admin-orders"], summary: "Force-cancel an order (releases commission)", role: "ADMIN" });
+  define({ audiences: ["admin"], method: "post", path: "/api/admin/orders/{id}/force-cancel", tags: ["admin-orders"], summary: "Force-cancel an order (releases commission)", role: "ADMIN", body: cancelOrderSchema });
 
   // Offers — driver
-  define({ audiences: ["driver"], method: "post", path: "/api/driver/offers", tags: ["offers"], summary: "Submit offer with custom price on an OPEN order", role: "DRIVER", driverExample: exOffer });
+  define({ audiences: ["driver"], method: "post", path: "/api/driver/offers", tags: ["offers"], summary: "Submit offer with custom price on an OPEN order", role: "DRIVER", driverExample: exOffer, body: createOfferSchema });
   define({ audiences: ["driver"], method: "get", path: "/api/driver/offers/mine", tags: ["offers"], summary: "List my offers (filter by status)", role: "DRIVER", driverExample: exPage([exOffer]) });
   define({ audiences: ["driver"], method: "post", path: "/api/driver/offers/{id}/cancel", tags: ["offers"], summary: "Cancel my pending offer", role: "DRIVER", driverExample: exOfferCancelled });
 
