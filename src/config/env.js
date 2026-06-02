@@ -22,6 +22,10 @@ const schema = z.object({
 
   OTP_DEMO_MODE: z.enum(["true", "false"]).default("false").transform((v) => v === "true"),
   OTP_DEMO_CODE: z.string().default("123456"),
+  // Single allow-listed demo phone (Play Store review / guest login). When the
+  // login phone equals this value, no SMS is sent and OTP_DEMO_CODE is accepted,
+  // regardless of OTP_DEMO_MODE. Empty = disabled.
+  DEMO_PHONE: z.string().default(""),
   OTP_LENGTH: z.coerce.number().int().min(4).max(8).default(6),
   OTP_TTL_SECONDS: z.coerce.number().int().positive().default(120),
   OTP_SEND_LIMIT_PER_HOUR: z.coerce.number().int().positive().default(3),

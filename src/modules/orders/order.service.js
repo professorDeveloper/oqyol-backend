@@ -58,6 +58,20 @@ function publicOrder(o, viewerRole = null) {
           firstName: o.driver.firstName,
           lastName: o.driver.lastName,
           phone: o.driver.phone,
+          avatarUrl: o.driver.avatarUrl ?? null,
+          rating: o.driver.driverProfile?.avgRating != null
+            ? Number(o.driver.driverProfile.avgRating)
+            : null,
+          totalRatings: o.driver.driverProfile?.totalRatings ?? 0,
+        }
+      : null,
+    vehicle: o.driver?.driverProfile?.vehicle
+      ? {
+          brand: o.driver.driverProfile.vehicle.brand,
+          model: `${o.driver.driverProfile.vehicle.brand} ${o.driver.driverProfile.vehicle.model}`.trim(),
+          color: o.driver.driverProfile.vehicle.color,
+          plateNumber: o.driver.driverProfile.vehicle.plateNumber,
+          year: o.driver.driverProfile.vehicle.year,
         }
       : null,
     otpCode: viewerRole === "USER" && ["ACCEPTED", "ARRIVED"].includes(o.status) ? o.otpCode : null,

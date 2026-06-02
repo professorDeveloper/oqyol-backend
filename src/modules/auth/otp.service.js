@@ -15,6 +15,9 @@ const deletionCooldownKey = (phone) => `otp_delete_cooldown:${phone}`;
 const deletionHourLimitKey = (phone) => `otp_delete_hour:${phone}`;
 const deletionAttemptsKey = (phone) => `otp_delete_attempts:${phone}`;
 
+// Allow-listed demo phone (Play Store review / guest login).
+const isDemoPhone = (phone) => env.DEMO_PHONE !== "" && phone === env.DEMO_PHONE;
+
 const SMS_TEMPLATE = (code) =>
   `Kodni hech kimga bermang! Oqyo\`l mobil ilovasi ga kirish uchun tasdiqlash kodi: ${code}`;
 // Eskiz har bir SMS matnini moderatsiya qiladi; "delete" uchun alohida template
@@ -62,6 +65,11 @@ async function clearOtpState(phone) {
 }
 
 export async function issueOtp(phone) {
+  // Demo phone: never send a real SMS, no rate limits. Code is OTP_DEMO_CODE.
+  if (isDemoPhone(phone)) {
+    return { expiresInSeconds: env.OTP_TTL_SECONDS, cooldownSeconds: 0 };
+  }
+
   const isProd = env.NODE_ENV === "production";
 
   if (isProd) {
@@ -169,7 +177,7 @@ export async function verifyDeletionOtp(phone, code) {
 }
 
 export async function verifyOtp(phone, code) {
-  if (env.OTP_DEMO_MODE && code === env.OTP_DEMO_CODE) {
+  if ((env.OTP_DEMO_MODE || isDemoPhone(phone)) && code === env.OTP_DEMO_CODE) {
     await clearOtpState(phone);
     return;
   }

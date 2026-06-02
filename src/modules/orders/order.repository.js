@@ -11,7 +11,24 @@ const orderInclude = {
   fromRegion: { select: { id: true, name: true, lat: true, lng: true } },
   toRegion: { select: { id: true, name: true, lat: true, lng: true } },
   passenger: { select: { id: true, firstName: true, lastName: true, phone: true } },
-  driver: { select: { id: true, firstName: true, lastName: true, phone: true } },
+  driver: {
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      phone: true,
+      avatarUrl: true,
+      driverProfile: {
+        select: {
+          avgRating: true,
+          totalRatings: true,
+          vehicle: {
+            select: { brand: true, model: true, color: true, plateNumber: true, year: true },
+          },
+        },
+      },
+    },
+  },
   offers: { orderBy: { createdAt: "desc" } },
 };
 

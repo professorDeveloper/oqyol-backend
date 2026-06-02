@@ -21,8 +21,28 @@ function publicOffer(o) {
     expiresAt: o.expiresAt.toISOString(),
     respondedAt: o.respondedAt?.toISOString() ?? null,
     createdAt: o.createdAt.toISOString(),
+    // `price` alias so passenger app (which reads `price`) shows the amount.
+    price: Number(o.offeredPrice),
     driver: o.driver
-      ? { id: o.driver.id, firstName: o.driver.firstName, lastName: o.driver.lastName }
+      ? {
+          id: o.driver.id,
+          firstName: o.driver.firstName,
+          lastName: o.driver.lastName,
+          avatarUrl: o.driver.avatarUrl ?? null,
+          rating: o.driver.driverProfile?.avgRating != null
+            ? Number(o.driver.driverProfile.avgRating)
+            : null,
+          totalRatings: o.driver.driverProfile?.totalRatings ?? 0,
+        }
+      : undefined,
+    vehicle: o.driver?.driverProfile?.vehicle
+      ? {
+          brand: o.driver.driverProfile.vehicle.brand,
+          model: `${o.driver.driverProfile.vehicle.brand} ${o.driver.driverProfile.vehicle.model}`.trim(),
+          color: o.driver.driverProfile.vehicle.color,
+          plateNumber: o.driver.driverProfile.vehicle.plateNumber,
+          year: o.driver.driverProfile.vehicle.year,
+        }
       : undefined,
   };
 }

@@ -1,7 +1,23 @@
 import { prisma } from "../../clients/prisma.js";
 
 const include = {
-  driver: { select: { id: true, firstName: true, lastName: true } },
+  driver: {
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      avatarUrl: true,
+      driverProfile: {
+        select: {
+          avgRating: true,
+          totalRatings: true,
+          vehicle: {
+            select: { brand: true, model: true, color: true, plateNumber: true, year: true },
+          },
+        },
+      },
+    },
+  },
 };
 
 export function create(data) {

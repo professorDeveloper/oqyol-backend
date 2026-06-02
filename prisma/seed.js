@@ -369,6 +369,25 @@ async function main() {
     }
   }
 
+  // Demo passenger for Play Store review / "guest" login.
+  // Backend accepts phone +998901234567 with OTP code OTP_DEMO_CODE (12345)
+  // without sending a real SMS — see otp.service.js demo-phone bypass.
+  const demoPhone = process.env.DEMO_PHONE || "+998901234567";
+  await prisma.user.upsert({
+    where: { phone: demoPhone },
+    update: { isActive: true },
+    create: {
+      phone: demoPhone,
+      firstName: "Demo",
+      lastName: "Passenger",
+      role: "USER",
+      registeredApp: "PASSENGER",
+      referralCode: "DEMO0001",
+      isActive: true,
+    },
+  });
+  console.log(`Demo passenger ready: ${demoPhone} (OTP code from OTP_DEMO_CODE)`);
+
   const totalRegions = await prisma.region.count();
   const totalDistricts = await prisma.district.count();
 
