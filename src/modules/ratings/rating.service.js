@@ -6,6 +6,21 @@ import {
   NotFoundError,
 } from "../../shared/errors.js";
 
+export async function getUserRating(userId) {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw new NotFoundError("User not found", "USER_NOT_FOUND");
+  const agg = await prisma.rating.aggregate({
+    where: { ratedId: userId },
+    _avg: { score: true },
+    _count: { _all: true },
+  });
+  return {
+    userId,
+    avgRating: agg._avg.score ? Number(agg._avg.score.toFixed(1)) : null,
+    totalRatings: agg._count._all,
+  };
+}
+
 export async function rateOrder(orderId, rater, { score }) {
   const order = await prisma.order.findUnique({ where: { id: orderId } });
   if (!order) throw new NotFoundError("Order not found", "ORDER_NOT_FOUND");

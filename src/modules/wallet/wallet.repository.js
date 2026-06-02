@@ -29,3 +29,16 @@ export function adjustHeld(walletId, delta, tx = prisma) {
 export function createTransaction(data, tx = prisma) {
   return tx.walletTransaction.create({ data });
 }
+
+export async function listTransactions(walletId, { skip, take }, tx = prisma) {
+  const [items, total] = await Promise.all([
+    tx.walletTransaction.findMany({
+      where: { walletId },
+      orderBy: { createdAt: "desc" },
+      skip,
+      take,
+    }),
+    tx.walletTransaction.count({ where: { walletId } }),
+  ]);
+  return { items, total };
+}

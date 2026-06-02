@@ -1,16 +1,48 @@
 import { prisma } from "../../clients/prisma.js";
 import * as repo from "./wallet.repository.js";
+import { paginate, buildPage } from "../../shared/pagination.js";
 import { BadRequestError, NotFoundError } from "../../shared/errors.js";
 
 function publicWallet(w) {
   return {
     balance: Number(w.balance),
+    heldAmount: Number(w.heldAmount),
+  };
+}
+
+function publicTransaction(t) {
+  return {
+    id: t.id,
+    type: t.type,
+    amount: Number(t.amount),
+    description: t.description,
+    referenceId: t.referenceId,
+    createdAt: t.createdAt.toISOString(),
   };
 }
 
 export async function getDriverBalance(userId) {
   const wallet = await repo.findWallet(userId);
   return wallet ? Number(wallet.balance) : 0;
+}
+
+// ── user-facing wallet (driver/passenger app) ─────────────────────────────
+
+export async function getMyWallet(userId) {
+  const wallet = await repo.getOrCreateWallet(userId);
+  return publicWallet(wallet);
+}
+
+export async function listMyTransactions(userId, query) {
+  const wallet = await repo.getOrCreateWallet(userId);
+  const { skip, take } = paginate(query);
+  const { items, total } = await repo.listTransactions(wallet.id, { skip, take });
+  return buildPage({
+    items: items.map(publicTransaction),
+    total,
+    page: query.page,
+    limit: query.limit,
+  });
 }
 
 export async function adminAdjust(userId, { amount, description }) {

@@ -38,3 +38,8 @@ export async function updateDriverProfile(req, res) {
   const profile = await profileService.updateDriverProfile(req.user.id, req.body);
   ok(res, profile);
 }
+
+export async function getDriverStats(req, res) {
+  const stats = await profileService.getDriverStats(req.user.id);
+  ok(res, stats);
+}

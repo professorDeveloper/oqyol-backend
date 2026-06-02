@@ -1,4 +1,7 @@
 import { z } from "zod";
+import { paginationQuerySchema } from "../../shared/pagination.js";
+
+export const transactionsQuerySchema = paginationQuerySchema;
 
 export const adjustSchema = z.object({
   amount: z.coerce.number().refine((v) => v !== 0, "amount cannot be zero"),
@@ -13,6 +16,7 @@ function envelope(d) {
 
 const walletSchema = z.object({
   balance: z.number(),
+  heldAmount: z.number(),
 });
 
 export const walletResponseSchema = envelope(walletSchema);

@@ -9,11 +9,11 @@ import { getSwaggerDoc } from "./swagger.js";
 
 import authRoutes from "./modules/auth/auth.routes.js";
 import vehicleRoutes from "./modules/vehicles/vehicle.routes.js";
-import { meRouter, driverProfileRouter } from "./modules/profile/profile.routes.js";
+import { meRouter, driverProfileRouter, driverStatsRouter } from "./modules/profile/profile.routes.js";
 import { regionsPublicRouter, regionsAdminRouter } from "./modules/regions/region.routes.js";
 import districtsRouter from "./modules/districts/district.routes.js";
 import { routesPublicRouter, routesAdminRouter } from "./modules/routes/route.routes.js";
-import { walletAdminRouter } from "./modules/wallet/wallet.routes.js";
+import { walletUserRouter, walletAdminRouter } from "./modules/wallet/wallet.routes.js";
 import {
   ordersPassengerRouter,
   ordersDriverRouter,
@@ -24,10 +24,14 @@ import {
   offersOnOrderRouter,
   offersActionRouter,
 } from "./modules/offers/offer.routes.js";
-import ratingsRouter from "./modules/ratings/rating.routes.js";
+import ratingsRouter, { ratingsPublicRouter } from "./modules/ratings/rating.routes.js";
 import notificationsRouter from "./modules/notifications/notification.routes.js";
 import disputesRouter from "./modules/disputes/dispute.routes.js";
 import adminRouter from "./modules/admin/admin.routes.js";
+import {
+  announcementsDriverRouter,
+  announcementsPublicRouter,
+} from "./modules/announcements/announcement.routes.js";
 
 export function createApp() {
   const app = express();
@@ -67,15 +71,20 @@ h1{font-size:20px}ul{padding-left:18px;line-height:1.9}a{color:#1763d6;text-deco
 
   // Driver-specific
   app.use("/api/driver/profile", driverProfileRouter);
+  app.use("/api/driver/stats", driverStatsRouter);
   app.use("/api/driver/vehicles", vehicleRoutes);
   app.use("/api/driver/orders", ordersDriverRouter);
   app.use("/api/driver/offers", offersDriverRouter);
+  app.use("/api/driver/announcements", announcementsDriverRouter);
 
   // Passenger-facing
   app.use("/api/orders", ordersPassengerRouter);
   app.use("/api/orders/:orderId/offers", offersOnOrderRouter);
   app.use("/api/orders/:id/ratings", ratingsRouter);
+  app.use("/api/ratings", ratingsPublicRouter);
   app.use("/api/offers", offersActionRouter);
+  app.use("/api/wallet", walletUserRouter);
+  app.use("/api/announcements", announcementsPublicRouter);
   app.use("/api/notifications", notificationsRouter);
   app.use("/api/disputes", disputesRouter);
 

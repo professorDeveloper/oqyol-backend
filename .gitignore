@@ -3,5 +3,6 @@ dist
 .env
 .claude/
 .idea/
+.DS_Store
 
 /generated/prisma

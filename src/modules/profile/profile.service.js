@@ -52,6 +52,57 @@ export async function getDriverProfile(userId) {
   return publicDriverProfile(profile);
 }
 
+/**
+ * Driver home dashboard — real aggregated stats from orders/wallet/offers.
+ */
+export async function getDriverStats(userId) {
+  const profile = await repo.findDriverProfileByUserId(userId);
+  if (!profile) throw new NotFoundError("Driver profile not found", "DRIVER_PROFILE_MISSING");
+
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+
+  const completedWhere = { driverId: userId, status: "FOUND" };
+  const [wallet, totalAgg, todayAgg, activeOffers, activeAnnouncements, ongoingOrders] =
+    await Promise.all([
+      walletService.getMyWallet(userId),
+      prisma.order.aggregate({
+        where: completedWhere,
+        _count: { _all: true },
+        _sum: { finalPrice: true },
+      }),
+      prisma.order.aggregate({
+        where: { ...completedWhere, foundAt: { gte: startOfToday } },
+        _count: { _all: true },
+        _sum: { finalPrice: true },
+      }),
+      prisma.offer.count({ where: { driverId: userId, status: "PENDING" } }),
+      prisma.driverAnnouncement.count({
+        where: { driverId: userId, status: "ACTIVE", expiresAt: { gt: new Date() } },
+      }),
+      prisma.order.count({
+        where: { driverId: userId, status: { in: ["ACCEPTED", "ARRIVED"] } },
+      }),
+    ]);
+
+  return {
+    wallet,
+    rating: {
+      avgRating: profile.avgRating ? Number(profile.avgRating) : null,
+      totalRatings: profile.totalRatings,
+    },
+    rides: {
+      totalCompleted: totalAgg._count._all,
+      totalEarnings: Number(totalAgg._sum.finalPrice ?? 0),
+      todayCompleted: todayAgg._count._all,
+      todayEarnings: Number(todayAgg._sum.finalPrice ?? 0),
+      ongoing: ongoingOrders,
+    },
+    activeOffers,
+    activeAnnouncements,
+  };
+}
+
 export async function updateDriverProfile(userId, data) {
   const updated = await repo.updateDriverProfile(userId, data);
   return publicDriverProfile(updated);

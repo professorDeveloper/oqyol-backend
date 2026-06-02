@@ -19,4 +19,9 @@ driverProfileRouter.use(requireAuth, requireRole("DRIVER"));
 driverProfileRouter.get("/", asyncHandler(ctrl.getDriverProfile));
 driverProfileRouter.patch("/", validate(updateDriverProfileSchema), asyncHandler(ctrl.updateDriverProfile));
 
-export { meRouter, driverProfileRouter };
+// Driver home dashboard: /api/driver/stats
+const driverStatsRouter = Router();
+driverStatsRouter.use(requireAuth, requireRole("DRIVER"));
+driverStatsRouter.get("/", asyncHandler(ctrl.getDriverStats));
+
+export { meRouter, driverProfileRouter, driverStatsRouter };

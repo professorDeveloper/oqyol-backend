@@ -17,6 +17,11 @@ publicRouter.get(
   validate(routeQuerySchema, "query"),
   asyncHandler(async (req, res) => ok(res, await service.listPublic(req.query)))
 );
+publicRouter.get(
+  "/:id",
+  validate(routeIdParamSchema, "params"),
+  asyncHandler(async (req, res) => ok(res, await service.getById(req.params.id)))
+);
 
 const adminRouter = Router();
 adminRouter.use(requireAuth, requireRole("ADMIN"));
