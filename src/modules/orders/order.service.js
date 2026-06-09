@@ -8,7 +8,6 @@ import { commissionAmount } from "../../shared/pricing.js";
 import { haversineMeters } from "../../shared/geo.js";
 import {
   BadRequestError,
-  ConflictError,
   ForbiddenError,
   NotFoundError,
 } from "../../shared/errors.js";
@@ -141,15 +140,8 @@ export async function createOrder(userId, body) {
     }
   }
 
-  const hasOpen = await prisma.order.findFirst({
-    where: {
-      passengerId: userId,
-      status: { in: ["OPEN", "ACCEPTED", "ARRIVED"] },
-    },
-  });
-  if (hasOpen) {
-    throw new ConflictError("You already have an active order", "ACTIVE_ORDER_EXISTS");
-  }
+  // Bir vaqtda bir nechta faol buyurtma yaratishga ruxsat beriladi.
+  // (Avval bu yerda "ACTIVE_ORDER_EXISTS" cheklovi bor edi; olib tashlandi.)
 
   const expiresAt = new Date(Date.now() + env.ORDER_TTL_MINUTES * 60_000);
 

@@ -29,7 +29,7 @@
 | **O4** | Yo'l preview + narx kiritish + tasdiqlash | ha — polyline + 2 marker | `GET /api/routes`, `POST /api/orders` |
 
 **Order qoidalari:**
-- 1 vaqtda **faqat 1 ta** faol buyurtma. Aks holda `409 ACTIVE_ORDER_EXISTS`.
+- Bir vaqtda **bir nechta** faol buyurtma yaratish mumkin (avvalgi `409 ACTIVE_ORDER_EXISTS` cheklovi olib tashlandi).
 - Narx `route.basePrice × 0.3` ↔ `route.basePrice × 5` oralig'ida.
 - `pickupLat`/`pickupLng` va `dropoffLat`/`dropoffLng` **majburiy juftlik**.
 
@@ -588,7 +588,6 @@ Bu real yo'lni qaytaradi — polyline'ga `geometry.coordinates` ni qo'yish.
 | `400 VALIDATION_ERROR` | Body noto'g'ri (lat/lng juftlik buzilgan) | Sheet'da inline xato + retry |
 | `400 PRICE_OUT_OF_RANGE` | Narx min/max tashqarida | Inline qizil matn: "Narx 36 000–600 000 so'm oralig'ida bo'lishi kerak" |
 | `400 ROUTE_INVALID` | `routeId` topilmadi / o'chirilgan | Banner: "Bu yo'nalish endi mavjud emas", O1'ga qaytarish |
-| `409 ACTIVE_ORDER_EXISTS` | Faol buyurtma bor | Dialog: "Sizda allaqachon faol buyurtma bor. Avval uni yakunlang.", "Tafsilot" tugma → faol orderga |
 | `401 UNAUTHORIZED` | Token muddati o'tgan | Auto refresh tokenni urinish, bo'lmasa logout |
 | `500` / network | Backend / internet | Toast "Server xatosi, qayta urining", tugma yana faollashadi |
 

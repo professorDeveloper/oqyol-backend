@@ -57,8 +57,8 @@ echo
 echo "ORDERS + OFFERS + LIFECYCLE"
 OID=$(curl -s -X POST $API/orders -H "Authorization: Bearer $PT" -H "$H" -d "{\"routeId\":\"$RT\"}" | pj "d['data']['id']")
 [ -n "$OID" ] && pass "Order created" || fail "order"
-DUP=$(curl -s -X POST $API/orders -H "Authorization: Bearer $PT" -H "$H" -d "{\"routeId\":\"$RT\"}" | pj "d.get('code')")
-[ "$DUP" = "ACTIVE_ORDER_EXISTS" ] && pass "2nd active order blocked" || fail "$DUP"
+DUP=$(curl -s -X POST $API/orders -H "Authorization: Bearer $PT" -H "$H" -d "{\"routeId\":\"$RT\"}" | pj "d['data']['id']")
+[ -n "$DUP" ] && pass "2nd active order allowed" || fail "$DUP"
 COUNT=$(curl -s $API/driver/orders/open -H "Authorization: Bearer $DT" | pj "d['data']['total']")
 pass "Driver sees $COUNT open"
 OFID=$(curl -s -X POST $API/driver/offers -H "Authorization: Bearer $DT" -H "$H" -d "{\"orderId\":\"$OID\",\"offeredPrice\":140000}" | pj "d['data']['id']")

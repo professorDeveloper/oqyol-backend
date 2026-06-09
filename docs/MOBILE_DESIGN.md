@@ -352,7 +352,6 @@ Pickup default — uy manzili (A5b'da saqlangan). Tahrirlash kerak bo'lsa, O1/O2
   - `201` → response'da `data.pickup`, `data.dropoff` obyektlari qaytadi → Orders tab → Order Detail (tracking)
   - `400 PRICE_OUT_OF_RANGE` → "Narx 36 000–600 000 so'm oralig'ida bo'lishi kerak"
   - `400 ROUTE_INVALID` → route topilmadi yoki o'chirilgan
-  - `409 ACTIVE_ORDER_EXISTS` → "Sizda allaqachon faol buyurtma bor"
 
 > **Narx validatsiyasi (frontend):** Foydalanuvchi narx kiritayotganda real-time `min`/`max`/`tavsiya` chiziqlarni ko'rsating (slider yoki +/- tugmalar). Tashqarida bo'lsa — submit disabled.
 
@@ -826,7 +825,7 @@ To'liq schema va misol so'rovlar: `http://localhost:3000/api/docs/passenger`
 ### 13.3 State management
 
 - **Auth** — global store (Redux/Zustand/Riverpod)
-- **Active order** — global singleton (har vaqt 1 ta faol order)
+- **Active orders** — bir nechta faol order bo'lishi mumkin (ro'yxat sifatida saqlang)
 - **Map state** — local screen state (faqat ekran ochiq turganda)
 
 ### 13.4 Polling jadval
