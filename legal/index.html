@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Oqyol — Shaharlararo va shahar ichi safarlar</title>
+<meta name="description" content="Oqyol — yo‘lovchilar va haydovchilarni qulay va ishonchli safarlar uchun bog‘laydigan ilova.">
+<style>
+  :root{
+    --yellow:#FFC400; --yellow-d:#E6A700;
+    --ink:#16181d; --ink2:#2b2f36; --grey:#5b626c; --grey2:#8b919b;
+    --line:#e4e6ea; --bg:#ffffff; --soft:#f7f8f9; --black:#16181d;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:1100px;margin:0 auto;padding:0 28px}
+  .ic{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block}
+
+  /* nav */
+  nav{border-bottom:1px solid var(--line);background:#fff;position:sticky;top:0;z-index:20}
+  .navin{max-width:1100px;margin:0 auto;padding:15px 28px;display:flex;align-items:center;justify-content:space-between}
+  .brand{display:flex;align-items:center;gap:11px;font-weight:800;font-size:1.25rem;color:var(--ink)}
+  .logo{width:38px;height:38px;border-radius:9px;display:block}
+  .lang{border:none;background:none;color:var(--grey);font-size:.9rem;font-weight:600;cursor:pointer;padding:5px 7px}
+  .lang.active{color:var(--ink);text-decoration:underline;text-underline-offset:4px;text-decoration-color:var(--yellow);text-decoration-thickness:3px}
+  .lang.sep{color:var(--line);padding:0}
+
+  /* hero */
+  .hero{background:var(--soft);border-bottom:1px solid var(--line)}
+  .heroin{padding:84px 0 78px;text-align:center}
+  .chip{display:inline-block;background:var(--yellow);color:var(--ink);font-weight:700;font-size:.85rem;padding:8px 16px;border-radius:999px;margin-bottom:24px}
+  h1.head{font-size:3rem;font-weight:800;line-height:1.12;letter-spacing:-1px;max-width:760px;margin:0 auto 20px}
+  h1.head .hl{background:var(--yellow);padding:0 8px;border-radius:4px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+  .lead{font-size:1.2rem;color:var(--grey);max-width:600px;margin:0 auto 30px}
+  .scrollcue{display:inline-flex;align-items:center;gap:8px;color:var(--ink);font-weight:600;font-size:.95rem;border:2px solid var(--ink);border-radius:10px;padding:11px 20px}
+  .scrollcue:hover{background:var(--ink);color:#fff}
+  .scrollcue .ic{width:18px;height:18px}
+
+  section.block{padding:72px 0}
+  .eyebrow{text-align:center;color:var(--yellow-d);font-weight:800;font-size:.8rem;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px}
+  .h2{text-align:center;font-size:2rem;font-weight:800;letter-spacing:-.5px;margin-bottom:12px}
+  .sub{text-align:center;color:var(--grey);max-width:560px;margin:0 auto 48px}
+
+  /* audience */
+  .duo{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:22px}
+  .actor{background:#fff;border:1px solid var(--line);border-radius:16px;padding:32px 30px}
+  .actor.drive{background:var(--ink);border-color:var(--ink);color:#fff}
+  .actor .top{display:flex;align-items:center;gap:15px;margin-bottom:22px}
+  .actor .badge{width:52px;height:52px;border-radius:13px;background:var(--yellow);color:var(--ink);display:grid;place-items:center;flex:none}
+  .actor .badge .ic{width:27px;height:27px}
+  .actor h3{font-size:1.35rem;font-weight:800}
+  .actor ul{list-style:none;display:flex;flex-direction:column;gap:14px}
+  .actor li{display:flex;align-items:flex-start;gap:12px;font-size:1rem;color:var(--ink2)}
+  .actor.drive li{color:#d7dade}
+  .actor li .ic{width:21px;height:21px;flex:none;margin-top:2px;color:var(--yellow-d)}
+  .actor.drive li .ic{color:var(--yellow)}
+
+  /* features */
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px}
+  .feature{background:#fff;border:1px solid var(--line);border-radius:14px;padding:28px 26px}
+  .feature .fic{width:48px;height:48px;border-radius:12px;background:var(--yellow);color:var(--ink);display:grid;place-items:center;margin-bottom:18px}
+  .feature h3{font-size:1.12rem;font-weight:700;margin-bottom:8px}
+  .feature p{color:var(--grey);font-size:.97rem}
+
+  /* steps */
+  .stepgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px}
+  .step{padding:4px}
+  .step .num{width:46px;height:46px;border-radius:50%;background:var(--yellow);color:var(--ink);font-weight:900;font-size:1.2rem;display:grid;place-items:center;margin-bottom:16px}
+  .step h3{font-size:1.08rem;font-weight:700;margin-bottom:6px}
+  .step p{color:var(--grey);font-size:.95rem}
+
+  /* footer */
+  footer{background:var(--ink);color:#fff;padding:48px 0 40px}
+  .foot{display:flex;flex-wrap:wrap;gap:20px;align-items:center;justify-content:space-between}
+  .foot .brand{color:#fff}
+  .footlinks{display:flex;flex-wrap:wrap;gap:24px}
+  .footlinks a{color:#aeb4bd;font-size:.95rem}
+  .footlinks a:hover{color:var(--yellow)}
+  .copy{width:100%;color:#7b818b;font-size:.85rem;border-top:1px solid #2c3038;margin-top:30px;padding-top:24px}
+
+  [data-lang-block]{display:none}
+  @media(max-width:560px){.heroin{padding:60px 0 56px}h1.head{font-size:2.1rem}.lead{font-size:1.05rem}}
+</style>
+</head>
+<body>
+
+<svg style="display:none" aria-hidden="true"><defs>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></symbol>
+  <symbol id="i-route" viewBox="0 0 24 24"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><polygon points="12 2 15.1 8.3 22 9.3 17 14.1 18.2 21 12 17.8 5.8 21 7 14.1 2 9.3 8.9 8.3 12 2"/></symbol>
+  <symbol id="i-tag" viewBox="0 0 24 24"><path d="M12.6 2.6A2 2 0 0 0 11.2 2H4a2 2 0 0 0-2 2v7.2a2 2 0 0 0 .6 1.4l8.7 8.7a2.4 2.4 0 0 0 3.4 0l6.6-6.6a2.4 2.4 0 0 0 0-3.4z"/><circle cx="7.5" cy="7.5" r=".6"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.7 9a1 1 0 0 1-.7 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.2-2.7a1.2 1.2 0 0 1 1.5 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+  <symbol id="i-car" viewBox="0 0 24 24"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9L2.1 10.7C1.4 11.3 1 12.1 1 13v3c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></symbol>
+</defs></svg>
+
+<nav><div class="navin">
+  <a class="brand" href="/"><img class="logo" src="/logo.svg" alt="Oqyol"> Oqyol</a>
+  <div>
+    <button class="lang active" data-lang="uz" onclick="setLang('uz')">O‘zbekcha</button>
+    <span class="lang sep">·</span>
+    <button class="lang" data-lang="en" onclick="setLang('en')">English</button>
+  </div>
+</div></nav>
+
+<!-- ============ UZBEK ============ -->
+<div data-lang-block="uz">
+  <section class="hero"><div class="wrap heroin">
+    <h1 class="head">Yo‘lovchi va haydovchi — <span class="hl">bitta ilovada</span></h1>
+    <p class="lead">Oqyol shaharlararo va shahar ichi safarlarni oson tashkil qiladi. Yo‘lovchilar mos haydovchini topadi, haydovchilar esa yo‘nalishidagi yo‘lovchini.</p>
+    <a class="scrollcue" href="#audience">Batafsil <svg class="ic"><use href="#i-down"/></svg></a>
+  </div></section>
+
+  <section class="block" id="audience"><div class="wrap">
+    <div class="eyebrow">Ikki tomon uchun</div>
+    <h2 class="h2">Hamma uchun moslangan</h2>
+    <p class="sub">Bir xil ilova ichida ham yo‘lovchi, ham haydovchi o‘ziga keragini topadi.</p>
+    <div class="duo">
+      <div class="actor pass">
+        <div class="top"><div class="badge"><svg class="ic"><use href="#i-user"/></svg></div><h3>Yo‘lovchilar uchun</h3></div>
+        <ul>
+          <li><svg class="ic"><use href="#i-check"/></svg> Xaritada boruvchi nuqtani belgilab, yo‘nalishni toping</li>
+          <li><svg class="ic"><use href="#i-check"/></svg> Haydovchilarning reytingi va sharhlarini ko‘ring</li>
+          <li><svg class="ic"><use href="#i-check"/></svg> Narx bo‘yicha kelishing va mos taklifni qabul qiling</li>
+          <li><svg class="ic"><use href="#i-check"/></svg> Safaringizni xavfsiz va shaffof boshlang</li>
+        </ul>
+      </div>
+      <div class="actor drive">
+        <div class="top"><div class="badge"><svg class="ic"><use href="#i-car"/></svg></div><h3>Haydovchilar uchun</h3></div>
+        <ul>
+          <li><svg class="ic"><use href="#i-check"/></svg> O‘z yo‘nalishingizdagi yo‘lovchilarni toping</li>
+          <li><svg class="ic"><use href="#i-check"/></svg> Bo‘sh o‘rinlarni to‘ldirib, qo‘shimcha daromad oling</li>
+          <li><svg class="ic"><use href="#i-check"/></svg> Reyting orqali ishonchli obro‘ qozoning</li>
+          <li><svg class="ic"><use href="#i-check"/></svg> Buyurtmalarni qulay va tez boshqaring</li>
+        </ul>
+      </div>
+    </div>
+  </div></section>
+
+  <section class="block" style="background:var(--soft);border-top:1px solid var(--line);border-bottom:1px solid var(--line)"><div class="wrap">
+    <div class="eyebrow">Imkoniyatlar</div>
+    <h2 class="h2">Nega Oqyol?</h2>
+    <p class="sub">Safarni qulay qiladigan hamma narsa bir joyda.</p>
+    <div class="grid">
+      <div class="feature"><div class="fic"><svg class="ic"><use href="#i-pin"/></svg></div><h3>Aniq joylashuv</h3><p>Olib ketish va yetkazish nuqtalarini xaritada bir necha bosishda belgilang.</p></div>
+      <div class="feature"><div class="fic"><svg class="ic"><use href="#i-route"/></svg></div><h3>Tayyor marshrutlar</h3><p>14 ta hudud va 194 ta tuman bo‘ylab yo‘nalishlardan tanlang.</p></div>
+      <div class="feature"><div class="fic"><svg class="ic"><use href="#i-star"/></svg></div><h3>Reyting va ishonch</h3><p>Haydovchilar reytingi va sharhlari bilan to‘g‘ri tanlov qiling.</p></div>
+      <div class="feature"><div class="fic"><svg class="ic"><use href="#i-tag"/></svg></div><h3>Narx bo‘yicha kelishuv</h3><p>Takliflar orqali siz uchun qulay narxni belgilang.</p></div>
+      <div class="feature"><div class="fic"><svg class="ic"><use href="#i-lock"/></svg></div><h3>Xavfsiz kirish</h3><p>SMS-kod (OTP) orqali oddiy va himoyalangan ro‘yxatdan o‘tish.</p></div>
+      <div class="feature"><div class="fic"><svg class="ic"><use href="#i-shield"/></svg></div><h3>Ma’lumotlaringiz nazoratda</h3><p>Hisobingizni va ma’lumotlaringizni istalgan vaqtda o‘chira olasiz.</p></div>
+    </div>
+  </div></section>
+
+  <section class="block"><div class="wrap">
+    <div class="eyebrow">Oson qadamlar</div>
+    <h2 class="h2">Qanday ishlaydi?</h2>
+    <p class="sub">To‘rt qadamda yo‘lga chiqing.</p>
+    <div class="stepgrid">
+      <div class="step"><div class="num">1</div><h3>Ro‘yxatdan o‘ting</h3><p>Telefon raqamingiz va SMS-kod bilan kiring.</p></div>
+      <div class="step"><div class="num">2</div><h3>Yo‘nalishni tanlang</h3><p>Qayerdan qayerga ketishingizni belgilang.</p></div>
+      <div class="step"><div class="num">3</div><h3>Taklifni qabul qiling</h3><p>Mos haydovchini reyting va narx bo‘yicha tanlang.</p></div>
+      <div class="step"><div class="num">4</div><h3>Yo‘lga chiqing</h3><p>Qulay va xavfsiz safardan bahramand bo‘ling.</p></div>
+    </div>
+  </div></section>
+</div>
+
+<!-- ============ ENGLISH ============ -->
+<div data-lang-block="en">
+  <section class="hero"><div class="wrap heroin">
+    <h1 class="head">Passenger and driver — <span class="hl">in one app</span></h1>
+    <p class="lead">Oqyol makes intercity and in-city trips easy. Passengers find the right driver, and drivers find passengers along their route.</p>
+    <a class="scrollcue" href="#audience-en">Learn more <svg class="ic"><use href="#i-down"/></svg></a>
+  </div></section>
+
+  <section class="block" id="audience-en"><div class="wrap">
+    <div class="eyebrow">For both sides</div>
+    <h2 class="h2">Built for everyone</h2>
+    <p class="sub">Within the same app, both passengers and drivers find exactly what they need.</p>
+    <div class="duo">
+      <div class="actor pass">
+        <div class="top"><div class="badge"><svg class="ic"><use href="#i-user"/></svg></div><h3>For passengers</h3></div>
+        <ul>
+          <li><svg class="ic"><use href="#i-check"/></svg> Find a route by setting your destination on the map</li>
+          <li><svg class="ic"><use href="#i-check"/></svg> See driver ratings and reviews before you choose</li>
+          <li><svg class="ic"><use href="#i-check"/></svg> Negotiate on price and accept the offer that fits</li>
+          <li><svg class="ic"><use href="#i-check"/></svg> Start your trip safely and transparently</li>
+        </ul>
+      </div>
+      <div class="actor drive">
+        <div class="top"><div class="badge"><svg class="ic"><use href="#i-car"/></svg></div><h3>For drivers</h3></div>
+        <ul>
+          <li><svg class="ic"><use href="#i-check"/></svg> Find passengers heading along your route</li>
+          <li><svg class="ic"><use href="#i-check"/></svg> Fill empty seats and earn extra income</li>
+          <li><svg class="ic"><use href="#i-check"/></svg> Build a trusted reputation through ratings</li>
+          <li><svg class="ic"><use href="#i-check"/></svg> Manage your orders quickly and conveniently</li>
+        </ul>
+      </div>
+    </div>
+  </div></section>
+
+  <section class="block" style="background:var(--soft);border-top:1px solid var(--line);border-bottom:1px solid var(--line)"><div class="wrap">
+    <div class="eyebrow">Features</div>
+    <h2 class="h2">Why Oqyol?</h2>
+    <p class="sub">Everything that makes a trip convenient, in one place.</p>
+    <div class="grid">
+      <div class="feature"><div class="fic"><svg class="ic"><use href="#i-pin"/></svg></div><h3>Precise location</h3><p>Set pickup and drop-off points on the map in just a few taps.</p></div>
+      <div class="feature"><div class="fic"><svg class="ic"><use href="#i-route"/></svg></div><h3>Ready routes</h3><p>Choose from routes across 14 regions and 194 districts.</p></div>
+      <div class="feature"><div class="fic"><svg class="ic"><use href="#i-star"/></svg></div><h3>Ratings & trust</h3><p>Make the right choice with driver ratings and reviews.</p></div>
+      <div class="feature"><div class="fic"><svg class="ic"><use href="#i-tag"/></svg></div><h3>Negotiate price</h3><p>Use offers to settle on a price that works for you.</p></div>
+      <div class="feature"><div class="fic"><svg class="ic"><use href="#i-lock"/></svg></div><h3>Secure sign-in</h3><p>Simple, protected registration via a one-time SMS code (OTP).</p></div>
+      <div class="feature"><div class="fic"><svg class="ic"><use href="#i-shield"/></svg></div><h3>Your data, your control</h3><p>Delete your account and data at any time, right from the app.</p></div>
+    </div>
+  </div></section>
+
+  <section class="block"><div class="wrap">
+    <div class="eyebrow">Simple steps</div>
+    <h2 class="h2">How it works</h2>
+    <p class="sub">Get on the road in four steps.</p>
+    <div class="stepgrid">
+      <div class="step"><div class="num">1</div><h3>Sign up</h3><p>Sign in with your phone number and an SMS code.</p></div>
+      <div class="step"><div class="num">2</div><h3>Pick a route</h3><p>Choose where you’re going, from and to.</p></div>
+      <div class="step"><div class="num">3</div><h3>Accept an offer</h3><p>Pick the right driver by rating and price.</p></div>
+      <div class="step"><div class="num">4</div><h3>Hit the road</h3><p>Enjoy a convenient and safe trip.</p></div>
+    </div>
+  </div></section>
+</div>
+
+<footer><div class="wrap">
+  <div class="foot">
+    <a class="brand" href="/" style="display:flex;align-items:center;gap:11px;font-weight:800;font-size:1.2rem"><img class="logo" src="/logo.svg" alt="Oqyol"> Oqyol</a>
+    <div class="footlinks">
+      <a href="/privacy">Privacy Policy</a>
+      <a href="/data-deletion">Data Deletion</a>
+      <a href="mailto:azmv21@gmail.com">azmv21@gmail.com</a>
+    </div>
+  </div>
+  <div class="copy">© 2026 Oqyol. All rights reserved.</div>
+</div></footer>
+
+<script>
+  function setLang(lang){
+    document.querySelectorAll('[data-lang-block]').forEach(function(el){
+      el.style.display = (el.dataset.langBlock === lang) ? 'block' : 'none';
+    });
+    document.documentElement.lang = lang;
+    document.querySelectorAll('.lang').forEach(function(b){
+      if(b.dataset.lang) b.classList.toggle('active', b.dataset.lang === lang);
+    });
+  }
+  setLang((navigator.language || 'uz').slice(0,2) === 'en' ? 'en' : 'uz');
+</script>
+</body>
+</html>

@@ -373,9 +373,9 @@ async function main() {
   // Backend accepts phone +998901234567 with OTP code OTP_DEMO_CODE (12345)
   // without sending a real SMS — see otp.service.js demo-phone bypass.
   const demoPhone = process.env.DEMO_PHONE || "+998901234567";
-  await prisma.user.upsert({
+  const demoPassenger = await prisma.user.upsert({
     where: { phone: demoPhone },
-    update: { isActive: true },
+    update: { isActive: true, firstName: "Demo", lastName: "Passenger" },
     create: {
       phone: demoPhone,
       firstName: "Demo",
@@ -387,6 +387,147 @@ async function main() {
     },
   });
   console.log(`Demo passenger ready: ${demoPhone} (OTP code from OTP_DEMO_CODE)`);
+
+  // --- Demo content so the demo account looks populated for Play review ---
+  const demoDriverUser = await prisma.user.upsert({
+    where: { phone: "+998901112233" },
+    update: { isActive: true },
+    create: {
+      phone: "+998901112233",
+      firstName: "Sardor",
+      lastName: "Karimov",
+      role: "USER",
+      registeredApp: "DRIVER",
+      referralCode: "DEMODRV1",
+      isActive: true,
+    },
+  });
+
+  const demoDriverProfile = await prisma.driverProfile.upsert({
+    where: { userId: demoDriverUser.id },
+    update: {
+      status: "ACTIVE",
+      avgRating: 4.8,
+      totalRatings: 124,
+      acAvailable: true,
+      musicAllowed: true,
+    },
+    create: {
+      userId: demoDriverUser.id,
+      status: "ACTIVE",
+      acAvailable: true,
+      musicAllowed: true,
+      bio: "Tajribali va xushmuomala haydovchi.",
+      avgRating: 4.8,
+      totalRatings: 124,
+    },
+  });
+
+  await prisma.vehicle.upsert({
+    where: { driverId: demoDriverProfile.id },
+    update: {},
+    create: {
+      driverId: demoDriverProfile.id,
+      brand: "Chevrolet",
+      model: "Cobalt",
+      color: "Oq",
+      plateNumber: "01A123BC",
+      year: 2022,
+      seatCount: 4,
+      isActive: true,
+    },
+  });
+
+  // Past (completed) trips + one active order — created only once.
+  const completedDemoOrders = await prisma.order.count({
+    where: { passengerId: demoPassenger.id, status: "FOUND" },
+  });
+  if (completedDemoOrders === 0) {
+    const someRegions = await prisma.region.findMany({
+      take: 2,
+      orderBy: { name: "asc" },
+    });
+    if (someRegions.length === 2) {
+      const [fromRegion, toRegion] = someRegions;
+      const day = 24 * 60 * 60 * 1000;
+
+      const o1 = await prisma.order.create({
+        data: {
+          passengerId: demoPassenger.id,
+          driverId: demoDriverUser.id,
+          fromRegionId: fromRegion.id,
+          toRegionId: toRegion.id,
+          status: "FOUND",
+          rideType: "SOLO",
+          seatsRequested: 1,
+          passengerPrice: 120000,
+          finalPrice: 110000,
+          pickupLat: fromRegion.lat,
+          pickupLng: fromRegion.lng,
+          pickupAddress: `${fromRegion.name}, markaz`,
+          dropoffLat: toRegion.lat,
+          dropoffLng: toRegion.lng,
+          dropoffAddress: `${toRegion.name}, markaz`,
+          acceptedAt: new Date(Date.now() - 7 * day),
+          arrivedAt: new Date(Date.now() - 7 * day),
+          foundAt: new Date(Date.now() - 7 * day),
+          expiresAt: new Date(Date.now() - 6 * day),
+          createdAt: new Date(Date.now() - 7 * day),
+        },
+      });
+      await prisma.rating.create({
+        data: { orderId: o1.id, raterId: demoPassenger.id, ratedId: demoDriverUser.id, score: 5 },
+      });
+
+      const o2 = await prisma.order.create({
+        data: {
+          passengerId: demoPassenger.id,
+          driverId: demoDriverUser.id,
+          fromRegionId: toRegion.id,
+          toRegionId: fromRegion.id,
+          status: "FOUND",
+          rideType: "SOLO",
+          seatsRequested: 2,
+          passengerPrice: 150000,
+          finalPrice: 150000,
+          pickupLat: toRegion.lat,
+          pickupLng: toRegion.lng,
+          pickupAddress: `${toRegion.name}, vokzal`,
+          dropoffLat: fromRegion.lat,
+          dropoffLng: fromRegion.lng,
+          dropoffAddress: `${fromRegion.name}, aeroport`,
+          acceptedAt: new Date(Date.now() - 3 * day),
+          arrivedAt: new Date(Date.now() - 3 * day),
+          foundAt: new Date(Date.now() - 3 * day),
+          expiresAt: new Date(Date.now() - 2 * day),
+          createdAt: new Date(Date.now() - 3 * day),
+        },
+      });
+      await prisma.rating.create({
+        data: { orderId: o2.id, raterId: demoPassenger.id, ratedId: demoDriverUser.id, score: 4 },
+      });
+
+      await prisma.order.create({
+        data: {
+          passengerId: demoPassenger.id,
+          fromRegionId: fromRegion.id,
+          toRegionId: toRegion.id,
+          status: "OPEN",
+          rideType: "SOLO",
+          seatsRequested: 1,
+          passengerPrice: 130000,
+          pickupLat: fromRegion.lat,
+          pickupLng: fromRegion.lng,
+          pickupAddress: `${fromRegion.name}, markaz`,
+          dropoffLat: toRegion.lat,
+          dropoffLng: toRegion.lng,
+          dropoffAddress: `${toRegion.name}, markaz`,
+          expiresAt: new Date(Date.now() + day),
+        },
+      });
+      console.log("Demo orders created (2 completed + 1 open).");
+    }
+  }
 
   const totalRegions = await prisma.region.count();
   const totalDistricts = await prisma.district.count();
